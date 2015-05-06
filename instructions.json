@@ -1,0 +1,16 @@
+{
+	"main_script": "moorhuhn.js",
+	"icon": "moorhuhn.webp",
+	"width": 600,
+	"height": 338,
+	"resize": "free",
+	"dependencies": [
+		"scripts/createjs-2014.12.12.min.js",
+		"scripts/sprites-config.js"
+	],
+	"title": "Moorhuhn",
+	"version": "1.0.0",
+	"description": "A simple shooter game, where players compete in taking down chickens.",
+	"keywords": [ "games", "chickens", "shooters" ],
+	"author": ["Martin Troup <troupmar@fit.cvut.cz>", "Vit Zdrubecky <zdrubvit@fit.cvut.cz>"]
+}
