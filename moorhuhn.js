@@ -143,7 +143,36 @@ var moorhuhn = SAGE2_App.extend({
 	
 	load: function(state, date) {},
 	
-	draw: function(date) {},
+	draw: function(date) {
+		if (this.moorhuhn.animation) {
+	        // if moorhuhn flies out on the left side -> create right moorhuhn
+	        if (this.moorhuhn.animation.x > this.areaWidth + 10) {
+	            this.stage.removeChild(this.moorhuhn.animation);
+	            this.moorhuhn.animation = this.createAnimation(getFlyLeftSpriteConfig(), 
+	                this.moorhuhn.animation.x, this.moorhuhn.animation.y, this.moorhuhnScale - 0.2, this.moorhuhnScale - 0.2, 'flapLeft');
+	            this.moorhuhn.direction = 'left';
+	        }
+	        // if moorhuhn flies out on the right side -> create left moorhuhn    
+	        else if (this.moorhuhn.animation.x < -200) {
+	            this.stage.removeChild(this.moorhuhn.animation);
+	            this.moorhuhn.animation = this.createAnimation(getFlyRightSpriteConfig(), 
+	                this.moorhuhn.animation.x, this.moorhuhn.animation.y, this.moorhuhnScale, this.moorhuhnScale, 'flapRight');
+	            this.moorhuhn.direction = 'right';
+	        }
+	    
+	        // move moorhuhn in the proper direction
+	        if (this.moorhuhn.direction == 'left') {
+	            this.moorhuhn.animation.x -= this.moorhuhnScale * 50;
+	        }
+	        else 
+	        {
+	            this.moorhuhn.animation.x += this.moorhuhnScale * 50;
+	        }
+
+	        // update the scores
+	        this.scoreboard.text = this.fillScoreboard();
+	    }
+	},
 	
 	resize: function(date) {
 		this.areaWidth  = this.context.canvas.width;
@@ -286,36 +315,36 @@ var moorhuhn = SAGE2_App.extend({
 	    	createjs.Sound.play('background', {loop: -1});
 	    
 		// the callback function handles every tick event and moves the moorhuhn	
-	    createjs.Ticker.addEventListener('tick', function () {
-		    if (self.moorhuhn.animation) {
-		        // if moorhuhn flies out on the left side -> create right moorhuhn
-		        if (self.moorhuhn.animation.x > self.areaWidth + 10) {
-		            self.stage.removeChild(self.moorhuhn.animation);
-		            self.moorhuhn.animation = self.createAnimation(getFlyLeftSpriteConfig(), 
-		                self.moorhuhn.animation.x, self.moorhuhn.animation.y, self.moorhuhnScale - 0.2, self.moorhuhnScale - 0.2, 'flapLeft');
-		            self.moorhuhn.direction = 'left';
-		        }
-		        // if moorhuhn flies out on the right side -> create left moorhuhn    
-		        else if (self.moorhuhn.animation.x < -200) {
-		            self.stage.removeChild(self.moorhuhn.animation);
-		            self.moorhuhn.animation = self.createAnimation(getFlyRightSpriteConfig(), 
-		                self.moorhuhn.animation.x, self.moorhuhn.animation.y, self.moorhuhnScale, self.moorhuhnScale, 'flapRight');
-		            self.moorhuhn.direction = 'right';
-		        }
+	 //    createjs.Ticker.addEventListener('tick', function () {
+		//     if (self.moorhuhn.animation) {
+		//         // if moorhuhn flies out on the left side -> create right moorhuhn
+		//         if (self.moorhuhn.animation.x > self.areaWidth + 10) {
+		//             self.stage.removeChild(self.moorhuhn.animation);
+		//             self.moorhuhn.animation = self.createAnimation(getFlyLeftSpriteConfig(), 
+		//                 self.moorhuhn.animation.x, self.moorhuhn.animation.y, self.moorhuhnScale - 0.2, self.moorhuhnScale - 0.2, 'flapLeft');
+		//             self.moorhuhn.direction = 'left';
+		//         }
+		//         // if moorhuhn flies out on the right side -> create left moorhuhn    
+		//         else if (self.moorhuhn.animation.x < -200) {
+		//             self.stage.removeChild(self.moorhuhn.animation);
+		//             self.moorhuhn.animation = self.createAnimation(getFlyRightSpriteConfig(), 
+		//                 self.moorhuhn.animation.x, self.moorhuhn.animation.y, self.moorhuhnScale, self.moorhuhnScale, 'flapRight');
+		//             self.moorhuhn.direction = 'right';
+		//         }
 		    
-		        // move moorhuhn in the proper direction
-		        if (self.moorhuhn.direction == 'left') {
-		            self.moorhuhn.animation.x -= self.moorhuhnScale * 50;
-		        }
-		        else 
-		        {
-		            self.moorhuhn.animation.x += self.moorhuhnScale * 50;
-		        }
+		//         // move moorhuhn in the proper direction
+		//         if (self.moorhuhn.direction == 'left') {
+		//             self.moorhuhn.animation.x -= self.moorhuhnScale * 50;
+		//         }
+		//         else 
+		//         {
+		//             self.moorhuhn.animation.x += self.moorhuhnScale * 50;
+		//         }
 
-		        // update the scores
-		        self.scoreboard.text = self.fillScoreboard();
-		    }
-		});
+		//         // update the scores
+		//         self.scoreboard.text = self.fillScoreboard();
+		//     }
+		// });
 	},
 
 	// create the sprite animation, scale and append it to the stage
