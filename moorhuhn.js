@@ -3,7 +3,7 @@ var moorhuhn = SAGE2_App.extend({
 	construct: function() {
 		// call super-class 'construct' and set the window resize type
 		arguments.callee.superClass.construct.call(this);
-		this.resizeEvents = 'continuous';
+		this.resizeEvents = 'onfinish';
 		
 		// construct stage
 		this.areaWidth    = null;
@@ -130,8 +130,8 @@ var moorhuhn = SAGE2_App.extend({
 		this.maxFPS = 10.0;
 
 		// set ticker fps and tell to stage to listen for tick event, so that it can redraw itself
-	    createjs.Ticker.setFPS(this.maxFPS);
-	    createjs.Ticker.addEventListener('tick', this.stage);
+	    // createjs.Ticker.setFPS(this.maxFPS);
+	    // createjs.Ticker.addEventListener('tick', this.stage);
 
 	    // add a button for user to join the game
 	    var joinGame =  {'textual': true, 'label': 'Join', 'fill': 'rgba(250,250,250,1.0)', 'animation': false};
@@ -172,6 +172,7 @@ var moorhuhn = SAGE2_App.extend({
 	        // update the scores
 	        this.scoreboard.text = this.fillScoreboard();
 	    }
+	    this.stage.update();
 	},
 	
 	resize: function(date) {
@@ -229,11 +230,11 @@ var moorhuhn = SAGE2_App.extend({
 			            this.changeScore(userId.id, this.shotHit);
 
 			            // create a new chicken using random variables
-			            var timeToCreate   = this.getRandomInt(this.minSpawnTime, this.maxSpawnTime);
-			            var flyDirection   = this.getRandomBinary();
+			            var timeToCreate   = this.getRandomInt(this.minSpawnTime, this.maxSpawnTime, date);
+			            var flyDirection   = this.getRandomBinary(date);
 			            var spriteCoordX   = flyDirection == 0 ? -10 : this.areaWidth + 10;  
-			            var spriteCoordY   = this.getRandomInt(this.minSpawnCoordY, this.maxSpawnCoordY);
-			            this.moorhuhnScale = this.getRandom1decimal(this.minSpawnScale, this.maxSpawnScale);
+			            var spriteCoordY   = this.getRandomInt(this.minSpawnCoordY, this.maxSpawnCoordY, date);
+			            this.moorhuhnScale = this.getRandom1decimal(this.minSpawnScale, this.maxSpawnScale, date);
 
 			            setTimeout(function() {
 			                self.moorhuhn.animation = self.createAnimation(flyDirection == 0 ? getFlyRightSpriteConfig() : getFlyLeftSpriteConfig(), 
@@ -365,7 +366,7 @@ var moorhuhn = SAGE2_App.extend({
 	     */
 	    this.stage.addChildAt(animation, 3);
 
-		// console.log('A new moorhuhn animation succesfully appended');
+		console.log('A new moorhuhn animation succesfully appended');
 	    return animation;
 	},
 
@@ -433,18 +434,18 @@ var moorhuhn = SAGE2_App.extend({
 	},
 
 	// a set of helper functions that generate pseudo random numbers
-	getRandomBinary: function () {
-		var pseudoRandom = Date.now() / 10000 % 1;
+	getRandomBinary: function (date) {
+		var pseudoRandom = moment(date).unix() / 10 % 1;
 	    return Math.round(pseudoRandom);
 	},
 
-	getRandom1decimal: function (min, max) {
-		var pseudoRandom = Date.now() / 10000 % 1;
+	getRandom1decimal: function (min, max, date) {
+		var pseudoRandom = moment(date).unix() / 10 % 1;
 	    return Math.round((pseudoRandom * (max - min) + min) * 10) / 10;
 	},
 
-	getRandomInt: function (min, max) {
-		var pseudoRandom = Date.now() / 10000 % 1;
+	getRandomInt: function (min, max, date) {
+		var pseudoRandom = moment(date).unix() / 10 % 1;
 	    return Math.floor(pseudoRandom * (max - min + 1)) + min;
 	}
 });
