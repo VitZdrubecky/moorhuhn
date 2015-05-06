@@ -4,9 +4,11 @@
 	"width": 600,
 	"height": 338,
 	"resize": "free",
+	"animation": true,
 	"dependencies": [
 		"scripts/createjs-2014.12.12.min.js",
-		"scripts/sprites-config.js"
+		"scripts/sprites-config.js",
+		"scripts/moment-2.10.2.min.js"
 	],
 	"title": "Moorhuhn",
 	"version": "1.0.0",
