@@ -30,9 +30,10 @@ var moorhuhn = SAGE2_App.extend({
 		this.moorhuhn      = {};
 
 		// construct the timer
-		this.timerText = null;
-		this.gameTime  = null;
-		this.gameTimer = null;
+		this.timerText       = null;
+		this.initialGameTime = null;
+		this.gameTime        = null;
+		this.gameTimer       = null;
 
 		// construct the player-related variables
 		this.players    = [];
@@ -108,30 +109,9 @@ var moorhuhn = SAGE2_App.extend({
 		this.maxSpawnScale  = 1.0;
 
 		// initial game time and timer updating function
-		this.gameTime = 25;
-		var self      = this;
-		this.gameTimer = setInterval(function () {
-			self.gameTime -= 1;
-			if (self.timerText)
-				self.timerText.text = 'Time left: ' + self.gameTime.toString();
-			if(self.gameTime === 0)
-			{
-				// end game and clean up
-				self.stage.removeChild(self.moorhuhn.animation);
-				// nullify the moorhuhn so that the Ticker::tick event listeners can still go on without creating new chickens
-				self.moorhuhn.animation = null;
-				self.stage.removeChild(self.target);
-		        if (self.soundEnabled)
-		        {
-		        	createjs.Sound.removeSound('background');
-		        	createjs.Sound.play('gameOverSound');
-		        }
-		        self.gameOverHaze = new createjs.Shape();
-			    self.gameOverHaze.graphics.beginFill("#000000").drawRect(0, 0, self.areaWidth, self.areaHeight);
-			    self.stage.addChild(self.gameOverHaze).set({alpha: 0.6});
-				clearInterval(self.gameTimer);
-			}
-		}, 1000);
+		this.initialGameTime = this.gameTime = 15;
+		var self       = this;
+		this.gameTimer = setInterval(this.countdown, 1000, this);
 
 		// limit the SAGE2 fps
 		this.maxFPS = 10.0;
@@ -141,14 +121,21 @@ var moorhuhn = SAGE2_App.extend({
 	    // createjs.Ticker.addEventListener('tick', this.stage);
 
 	    // add a button for user to restart the game
-	    var newGame  =  {'textual': true, 'label': 'New Game', 'fill': 'rgba(250,250,250,1.0)', 'animation': false};
-		this.controls.addButton({type: newGame, sequenceNo: 1, action:function(date) {
+	    var newGame  =  {'textual': true, 'label': 'New', 'fill': 'rgba(250, 250, 250, 1.0)', 'animation': false};
+		this.controls.addButton({type: newGame, sequenceNo: 1, action: function(date) {
+			this.cleanup();
 			this.stage.removeChild(this.gameOverHaze);
+			this.players.length  = 0;
+			this.scoreboard.text = "Scores:\n\n";
+			this.gameTime        = this.initialGameTime;
+			clearInterval(this.gameTimer);
+			this.gameTimer       = setInterval(this.countdown, 1000, this);
 			// load the first bird after a while
 		    setTimeout(function() {
 			    self.moorhuhn.animation = self.createAnimation(getFlyRightSpriteConfig(), -200, self.areaHeight / 2, self.moorhuhnScale, self.moorhuhnScale, 'flapRight');
 			    self.moorhuhn.direction = 'right';
 			}, 5000);
+			console.log('Game has been restarted');
 		}.bind(this)});
 		this.controls.finishedAddingControls();
 
@@ -356,13 +343,9 @@ var moorhuhn = SAGE2_App.extend({
 	    animation.scaleY = scaleY;
 	    animation.gotoAndPlay(animType);
 
-	    /**
-	     * moorhuhn should always be in front of the background and behind the target aim
-	     * first case happens when the moorhuhn is firstly loaded, second when replaced for one that flies in the opposite direction
-	     */
 	    this.stage.addChildAt(animation, 4);
 
-		console.log('A new moorhuhn animation succesfully appended');
+		// console.log('A new moorhuhn animation succesfully appended');
 	    return animation;
 	},
 
@@ -400,6 +383,39 @@ var moorhuhn = SAGE2_App.extend({
 	    instance.stage.addChild(instance.target);
 
 		console.log('Target aim succesfully appended');
+	},
+
+	// this function handles the game time
+	countdown: function (instance) {
+		instance.gameTime -= 1;
+		if (instance.timerText)
+			instance.timerText.text = 'Time left: ' + instance.gameTime.toString();
+		if(instance.gameTime === 0)
+		{
+			// end game and clean up
+			instance.cleanup();
+
+	        if (instance.soundEnabled)
+	        {
+	        	createjs.Sound.removeSound('background');
+	        	createjs.Sound.play('gameOverSound');
+	        }
+
+	        // cover the canvas with haze
+	        instance.gameOverHaze = new createjs.Shape();
+		    instance.gameOverHaze.graphics.beginFill("#000000").drawRect(0, 0, instance.areaWidth, instance.areaHeight);
+		    instance.stage.addChild(instance.gameOverHaze).set({alpha: 0.6});
+
+			clearInterval(instance.gameTimer);
+		}
+	},
+
+	// remove stage objects, so that the game can be restarted 
+	cleanup: function () {
+		this.stage.removeChild(this.moorhuhn.animation);
+		// nullify the moorhuhn so that the draw method can still go on without creating new chickens
+		this.moorhuhn.animation = null;
+		this.stage.removeChild(this.target);
 	},
 
 	// checks if the user is already among the registered players
