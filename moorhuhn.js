@@ -92,7 +92,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.shotMissed = -2;
 
 		// chicken spawn constants
-		this.minSpawnTime   = 1000;
+		this.minSpawnTime   = 1500;
 		this.maxSpawnTime   = 3000;
 		this.minSpawnCoordY = 10;
 		this.maxSpawnCoordY = this.areaHeight - 30;
@@ -135,6 +135,7 @@ var moorhuhn = SAGE2_App.extend({
 
 	    // add a button for user to join the game
 	    var joinGame =  {'textual': true, 'label': 'Join', 'fill': 'rgba(250,250,250,1.0)', 'animation': false};
+	    var newGame  =  {'textual': true, 'label': 'New Game', 'fill': 'rgba(250,250,250,1.0)', 'animation': false};
 		this.controls.addButton({type: joinGame, sequenceNo: 1, id: 'joinGameBtn'});
 		this.controls.finishedAddingControls();
 
@@ -172,6 +173,8 @@ var moorhuhn = SAGE2_App.extend({
 	        // update the scores
 	        this.scoreboard.text = this.fillScoreboard();
 	    }
+
+	    // redraw the whole stage
 	    this.stage.update();
 	},
 	
@@ -186,7 +189,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.stage.removeChild(this.background);
 		this.backgroundImage        = new Image();
 	    this.backgroundImage.src    = '/uploads/assets/moorhuhn/background/playground-moorhuhn.svg';
-	    this.backgroundImage.onload = this.handleBackgroundImageLoad(this, true);
+	    this.backgroundImage.onload = this.handleBackgroundImageLoad(this, 1700, 960, true);
 
 		this.refresh(date);
 	},
@@ -195,6 +198,7 @@ var moorhuhn = SAGE2_App.extend({
 		// if pointer click fired
 		if (eventType == 'pointerPress' && this.gameTime > 0) {
 			console.log('Click event received from: "' + userId.id + '" with label ' + userId.label + ' and color ' + userId.color);
+			console.log('Time of the event: "' + date);
 
 			if (this.userExists(userId.id))
 			{
@@ -287,7 +291,7 @@ var moorhuhn = SAGE2_App.extend({
 	    // load both static images
 	    this.backgroundImage        = new Image();
 	    this.backgroundImage.src    = '/uploads/assets/moorhuhn/background/playground-moorhuhn.png';
-	    this.backgroundImage.onload = this.handleBackgroundImageLoad(this, false);
+	    this.backgroundImage.onload = this.handleBackgroundImageLoad(this, 1280, 720, false);
 
 	    this.targetImage            = new Image();
 	    this.targetImage.src        = '/uploads/assets/moorhuhn/target.svg';
@@ -314,38 +318,6 @@ var moorhuhn = SAGE2_App.extend({
 	    // play background music
 	    if (this.soundEnabled)
 	    	createjs.Sound.play('background', {loop: -1});
-	    
-		// the callback function handles every tick event and moves the moorhuhn	
-	 //    createjs.Ticker.addEventListener('tick', function () {
-		//     if (self.moorhuhn.animation) {
-		//         // if moorhuhn flies out on the left side -> create right moorhuhn
-		//         if (self.moorhuhn.animation.x > self.areaWidth + 10) {
-		//             self.stage.removeChild(self.moorhuhn.animation);
-		//             self.moorhuhn.animation = self.createAnimation(getFlyLeftSpriteConfig(), 
-		//                 self.moorhuhn.animation.x, self.moorhuhn.animation.y, self.moorhuhnScale - 0.2, self.moorhuhnScale - 0.2, 'flapLeft');
-		//             self.moorhuhn.direction = 'left';
-		//         }
-		//         // if moorhuhn flies out on the right side -> create left moorhuhn    
-		//         else if (self.moorhuhn.animation.x < -200) {
-		//             self.stage.removeChild(self.moorhuhn.animation);
-		//             self.moorhuhn.animation = self.createAnimation(getFlyRightSpriteConfig(), 
-		//                 self.moorhuhn.animation.x, self.moorhuhn.animation.y, self.moorhuhnScale, self.moorhuhnScale, 'flapRight');
-		//             self.moorhuhn.direction = 'right';
-		//         }
-		    
-		//         // move moorhuhn in the proper direction
-		//         if (self.moorhuhn.direction == 'left') {
-		//             self.moorhuhn.animation.x -= self.moorhuhnScale * 50;
-		//         }
-		//         else 
-		//         {
-		//             self.moorhuhn.animation.x += self.moorhuhnScale * 50;
-		//         }
-
-		//         // update the scores
-		//         self.scoreboard.text = self.fillScoreboard();
-		//     }
-		// });
 	},
 
 	// create the sprite animation, scale and append it to the stage
@@ -371,17 +343,18 @@ var moorhuhn = SAGE2_App.extend({
 	},
 
 	// a callback function to rasterize, transparate, cache and append the background image 
-	handleBackgroundImageLoad: function (instance, cache) {
+	handleBackgroundImageLoad: function (instance, width, height, cache) {
 	    instance.background = new createjs.Bitmap(instance.backgroundImage);
 	    
-	    var scaleX = (instance.areaWidth / 1280);
-	    var scaleY = (instance.areaHeight / 720);
+	    var scaleX = (instance.areaWidth / width);
+	    var scaleY = (instance.areaHeight / height);
 	    instance.background.scaleX = scaleX;
 	    instance.background.scaleY = scaleY;
+	    console.log(scaleX);
 	    // instance.background.set({alpha: 0.85});
 	    // cache the background, so that it's not re-rendered every tick
 	    if (cache)
-	    	instance.background.cache(0, 0, 1280, 720);
+	    	instance.background.cache(0, 0, 1280 * (1 + scaleX), 720 * (1 + scaleY));
 
 	    instance.stage.addChildAt(instance.background, 0);
 
