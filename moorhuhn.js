@@ -1,3 +1,20 @@
+/*
+
+CreateJS object stage z-coordinates for displaying the elements in order to be visible:
+
+0 - greyish canvas filling
+1 - background image
+2 - text with game time
+3 - scoreboard
+4 - moorhuhn
+
+others in order of appending:
+
+- target aim image
+- dark haze covering the canvas after the game ends
+- game over text
+
+*/
 var moorhuhn = SAGE2_App.extend({
 
 	construct: function() {
@@ -20,7 +37,6 @@ var moorhuhn = SAGE2_App.extend({
 		this.targetImage     = null;
 		this.target          = null;
 		this.targetEnabled   = null;
-		this.gameOverHaze    = null;
 
 		// construct the bird
 		this.moorhuhnXPos  = null;
@@ -29,18 +45,20 @@ var moorhuhn = SAGE2_App.extend({
 		this.moorhuhnScale = null;
 		this.moorhuhn      = {};
 
-		// construct the timer
+		// construct the time related vars
 		this.timerText       = null;
 		this.initialGameTime = null;
 		this.gameTime        = null;
 		this.gameTimer       = null;
 		this.gameOverText    = null;
+		this.gameOverHaze    = null;
 
 		// construct the player-related variables
 		this.players    = [];
 		this.scoreboard = null;
 		this.shotHit    = null;
 		this.shotMissed = null;
+		this.fontStyle  = null;
 
 		// construct the chicken spawning parameters
 		this.minSpawnTime   = null;
@@ -71,12 +89,16 @@ var moorhuhn = SAGE2_App.extend({
 
 	    // create the fill behind the background
 	    this.fill = new createjs.Shape();
-	    this.fill.graphics.beginFill("#B6B6B4").drawRect(0, 0, this.areaWidth, this.areaHeight);
+	    this.fill.graphics.beginFill('#B6B6B4').drawRect(0, 0, this.areaWidth, this.areaHeight);
 	    this.stage.addChildAt(this.fill, 0);
 
 	    // set these two to true if the game should include all the sounds and music or a target
 	    this.soundEnabled  = false;
 	    this.targetEnabled = false;
+
+		// default style of all the in-game strings
+	    var fontSize   = this.areaWidth / 35;
+	    this.fontStyle = 'italic ' + fontSize.toString() + 'px Georgia';
 
 	    // init the object queue
 	    this.queue = new createjs.LoadQueue(false);
@@ -110,7 +132,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.maxSpawnScale  = 1.0;
 
 		// initial game time and timer updating function
-		this.initialGameTime = this.gameTime = 15;
+		this.initialGameTime = this.gameTime = 30;
 		var self       = this;
 		this.gameTimer = setInterval(this.countdown, 1000, this);
 
@@ -128,7 +150,7 @@ var moorhuhn = SAGE2_App.extend({
 			this.stage.removeChild(this.gameOverText);
 			this.stage.removeChild(this.gameOverHaze);
 			this.players.length  = 0;
-			this.scoreboard.text = "Scores:\n\n";
+			this.scoreboard.text = "Scores:\n";
 			this.gameTime        = this.initialGameTime;
 			clearInterval(this.gameTimer);
 			this.gameTimer       = setInterval(this.countdown, 1000, this);
@@ -184,16 +206,30 @@ var moorhuhn = SAGE2_App.extend({
 		this.areaWidth  = this.context.canvas.width;
 		this.areaHeight = this.context.canvas.height;
 
-	    this.fill.graphics.beginFill("#B6B6B4").drawRect(0, 0, this.areaWidth, this.areaHeight);
+	    this.fill.graphics.beginFill('#B6B6B4').drawRect(0, 0, this.areaWidth, this.areaHeight);
+
+	    // resize the texts - the constant fullfills the requirement for a 55px font size on a 1920px wide monitor
+	    var fontSize        = this.areaWidth / 35;
+	    this.fontStyle      = 'italic ' + fontSize.toString() + 'px Georgia';
+	    this.timerText.font = this.scoreboard.font = this.fontStyle;
 
 	    this.timerText.x = this.areaWidth / 2;
 
 		this.maxSpawnCoordY = this.areaHeight - 30;
 
+		// replace the background, this time with svg and caching
 		this.stage.removeChild(this.background);
 		this.backgroundImage        = new Image();
 	    this.backgroundImage.src    = '/uploads/assets/moorhuhn/background/playground-moorhuhn.svg';
 	    this.backgroundImage.onload = this.handleBackgroundImageLoad(this, 1700, 960, true);
+
+	    // scale the haze too
+	    if (this.stage.getChildIndex(this.gameOverHaze) != -1)
+	    {
+		    this.gameOverHaze.graphics.clear().beginFill('#000000').drawRect(0, 0, this.areaWidth, this.areaHeight);
+		    this.gameOverText.textAlign = 'center';
+		    this.gameOverText.font      = this.fontStyle;
+		}
 
 		this.refresh(date);
 	},
@@ -276,16 +312,6 @@ var moorhuhn = SAGE2_App.extend({
 		    this.target.x = position.x - 45;
 		    this.target.y = position.y - 45;
 		}
-		// check if the user wants to join the game
-		else if (eventType == 'widgetEvent' && data.ctrlId == 'joinGameBtn')
-		{
-			if ( ! this.userExists(userId.id))
-			{
-				this.players.push({'id': userId.id, 'name': userId.label, 'color': userId.color, 'score': 0});
-
-				console.log('A new user ' + userId.label + ' joined the game');
-			}
-	    }
 	},
 
 
@@ -315,14 +341,14 @@ var moorhuhn = SAGE2_App.extend({
 		}, 5000);
 
 	    // add timer
-	    this.timerText   = new createjs.Text('Time left: ' + this.gameTime.toString(), '36px Arial', '#FFF');
+	    this.timerText   = new createjs.Text('Time left: ' + this.gameTime.toString(), this.fontStyle, '#FFF');
 	    this.timerText.x = this.areaWidth / 2;
 	    this.timerText.y = 10;
 	    this.stage.addChildAt(this.timerText, 2);
 		console.log('Timer succesfully appended');
 
 		// add scoreboard
-	    this.scoreboard   = new createjs.Text(this.fillScoreboard(), '36px Arial', '#FFF');
+	    this.scoreboard   = new createjs.Text(this.fillScoreboard(), this.fontStyle, '#FFF');
 	    this.scoreboard.x = 10;
 	    this.scoreboard.y = 10;
 	    this.stage.addChildAt(this.scoreboard, 3);
@@ -336,13 +362,17 @@ var moorhuhn = SAGE2_App.extend({
 	// create the sprite animation, scale and append it to the stage
 	createAnimation: function (spriteConfig, x, y, scaleX, scaleY, animType) {
 	    // create sprite
-	    var sprite       = new createjs.SpriteSheet(spriteConfig, animType);
+	    var sprite    = new createjs.SpriteSheet(spriteConfig, animType);
 	    // create animation
-	    var animation    = new createjs.Sprite(sprite);
-	    animation.x      = x;
-	    animation.y      = y;
-	    animation.scaleX = scaleX;
-	    animation.scaleY = scaleY;
+	    var animation = new createjs.Sprite(sprite);
+	    animation.x   = x;
+	    animation.y   = y;
+
+	    // add scale to compensate for a screen larger than full hd
+	    var scaleQuantity = this.areaWidth - 1920;
+	    var addedScale    = scaleQuantity > 0 ? Math.round(scaleQuantity / 100) : 0;
+	    animation.scaleX  = scaleX + addedScale;
+	    animation.scaleY  = scaleY + addedScale;
 	    animation.gotoAndPlay(animType);
 
 	    this.stage.addChildAt(animation, 4);
@@ -361,7 +391,7 @@ var moorhuhn = SAGE2_App.extend({
 	    instance.background.scaleY = scaleY;
 	    // lower the alpha so that the bird can be seen against the trees
 	    instance.background.set({alpha: 0.85});
-	    // cache the background, so that it's not re-rendered every tick
+	    // tell the stage to not re-render background in every tick
 	    if (cache)
 	    	instance.background.cache(0, 0, 1280 * (1 + scaleX), 720 * (1 + scaleY));
 
@@ -409,16 +439,17 @@ var moorhuhn = SAGE2_App.extend({
 		    instance.stage.addChild(instance.gameOverHaze).set({alpha: 0.6});
 
 		    // add the game over text
-		    instance.gameOverText   = new createjs.Text('GAME OVER', '36px Arial', '#FFF');
+		    instance.gameOverText   = new createjs.Text('GAME OVER', instance.fontStyle, '#FFF');
 		    instance.gameOverText.x = instance.areaWidth / 2;
 		    instance.gameOverText.y = instance.areaHeight / 2;
+		    instance.gameOverText.textAlign = 'center';
 		    instance.stage.addChild(instance.gameOverText);
 
 			clearInterval(instance.gameTimer);
 		}
 	},
 
-	// remove stage objects, so that the game can be restarted 
+	// remove staged objects, so the game can be restarted 
 	cleanup: function () {
 		this.stage.removeChild(this.moorhuhn.animation);
 		// nullify the moorhuhn so that the draw method can still go on without creating new chickens
@@ -448,7 +479,7 @@ var moorhuhn = SAGE2_App.extend({
 
 	// create the string to display player scores
 	fillScoreboard: function () {
-		var s = "Scores:\n\n";
+		var s = "Scores:\n";
 		for (var i = 0; i < this.players.length; i++)
 		{
 			s += this.players[i].name + ': ' + this.players[i].score + "\n";
