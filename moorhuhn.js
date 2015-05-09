@@ -34,6 +34,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.initialGameTime = null;
 		this.gameTime        = null;
 		this.gameTimer       = null;
+		this.gameOverText    = null;
 
 		// construct the player-related variables
 		this.players    = [];
@@ -124,6 +125,7 @@ var moorhuhn = SAGE2_App.extend({
 	    var newGame  =  {'textual': true, 'label': 'New', 'fill': 'rgba(250, 250, 250, 1.0)', 'animation': false};
 		this.controls.addButton({type: newGame, sequenceNo: 1, action: function(date) {
 			this.cleanup();
+			this.stage.removeChild(this.gameOverText);
 			this.stage.removeChild(this.gameOverHaze);
 			this.players.length  = 0;
 			this.scoreboard.text = "Scores:\n\n";
@@ -301,12 +303,12 @@ var moorhuhn = SAGE2_App.extend({
 
 	    if (this.targetEnabled)
 	    {
-		    this.targetImage            = new Image();
-		    this.targetImage.src        = '/uploads/assets/moorhuhn/target.svg';
-		    this.targetImage.onload     = this.handleTargetImageLoad(this);
+		    this.targetImage        = new Image();
+		    this.targetImage.src    = '/uploads/assets/moorhuhn/target.svg';
+		    this.targetImage.onload = this.handleTargetImageLoad(this);
 		}
 
-	    // load the first bird after a while
+	    // load the first bird after a while (give the application some time to load everything)
 	    setTimeout(function() {
 		    self.moorhuhn.animation = self.createAnimation(getFlyRightSpriteConfig(), -200, self.areaHeight / 2, self.moorhuhnScale, self.moorhuhnScale, 'flapRight');
 		    self.moorhuhn.direction = 'right';
@@ -405,6 +407,12 @@ var moorhuhn = SAGE2_App.extend({
 	        instance.gameOverHaze = new createjs.Shape();
 		    instance.gameOverHaze.graphics.beginFill("#000000").drawRect(0, 0, instance.areaWidth, instance.areaHeight);
 		    instance.stage.addChild(instance.gameOverHaze).set({alpha: 0.6});
+
+		    // add the game over text
+		    instance.gameOverText   = new createjs.Text('GAME OVER', '36px Arial', '#FFF');
+		    instance.gameOverText.x = instance.areaWidth / 2;
+		    instance.gameOverText.y = instance.areaHeight / 2;
+		    instance.stage.addChild(instance.gameOverText);
 
 			clearInterval(instance.gameTimer);
 		}
