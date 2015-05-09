@@ -19,6 +19,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.background      = null;
 		this.targetImage     = null;
 		this.target          = null;
+		this.targetEnabled   = null;
 		this.gameOverHaze    = null;
 
 		// construct the bird
@@ -71,8 +72,9 @@ var moorhuhn = SAGE2_App.extend({
 	    this.fill.graphics.beginFill("#B6B6B4").drawRect(0, 0, this.areaWidth, this.areaHeight);
 	    this.stage.addChildAt(this.fill, 0);
 
-	    // set this to true if the game should include all the sounds and music
-	    this.soundEnabled = false;
+	    // set these two to true if the game should include all the sounds and music or a target
+	    this.soundEnabled  = false;
+	    this.targetEnabled = false;
 
 	    // init the object queue
 	    this.queue = new createjs.LoadQueue(false);
@@ -106,7 +108,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.maxSpawnScale  = 1.0;
 
 		// initial game time and timer updating function
-		this.gameTime = 15;
+		this.gameTime = 25;
 		var self      = this;
 		this.gameTimer = setInterval(function () {
 			self.gameTime -= 1;
@@ -138,10 +140,16 @@ var moorhuhn = SAGE2_App.extend({
 	    // createjs.Ticker.setFPS(this.maxFPS);
 	    // createjs.Ticker.addEventListener('tick', this.stage);
 
-	    // add a button for user to join the game
-	    var joinGame =  {'textual': true, 'label': 'Join', 'fill': 'rgba(250,250,250,1.0)', 'animation': false};
+	    // add a button for user to restart the game
 	    var newGame  =  {'textual': true, 'label': 'New Game', 'fill': 'rgba(250,250,250,1.0)', 'animation': false};
-		this.controls.addButton({type: joinGame, sequenceNo: 1, id: 'joinGameBtn'});
+		this.controls.addButton({type: newGame, sequenceNo: 1, action:function(date) {
+			this.stage.removeChild(this.gameOverHaze);
+			// load the first bird after a while
+		    setTimeout(function() {
+			    self.moorhuhn.animation = self.createAnimation(getFlyRightSpriteConfig(), -200, self.areaHeight / 2, self.moorhuhnScale, self.moorhuhnScale, 'flapRight');
+			    self.moorhuhn.direction = 'right';
+			}, 5000);
+		}.bind(this)});
 		this.controls.finishedAddingControls();
 
 		console.log('Moorhuhn object init completed');
@@ -248,9 +256,13 @@ var moorhuhn = SAGE2_App.extend({
 			            this.moorhuhnScale = this.getRandom1decimal(this.minSpawnScale, this.maxSpawnScale, date);
 
 			            setTimeout(function() {
-			                self.moorhuhn.animation = self.createAnimation(flyDirection == 0 ? getFlyRightSpriteConfig() : getFlyLeftSpriteConfig(), 
-			                   spriteCoordX, spriteCoordY, self.moorhuhnScale, self.moorhuhnScale, flyDirection == 0 ? 'flapRight' : 'flapLeft');
-			                self.moorhuhn.direction = flyDirection == 0 ? 'right' : 'left';
+			            	// check if the time hasn't ran out yet
+			            	if (self.gameTime > 0)
+		            		{
+				                self.moorhuhn.animation = self.createAnimation(flyDirection == 0 ? getFlyRightSpriteConfig() : getFlyLeftSpriteConfig(), 
+				                   spriteCoordX, spriteCoordY, self.moorhuhnScale, self.moorhuhnScale, flyDirection == 0 ? 'flapRight' : 'flapLeft');
+				                self.moorhuhn.direction = flyDirection == 0 ? 'right' : 'left';
+				            }
 			            }, timeToCreate);
 			        }
 			        // the penalty for missing the shot
@@ -269,9 +281,9 @@ var moorhuhn = SAGE2_App.extend({
 			}
 		}
 		// if pointer move event fired
-		else if (eventType == 'pointerMove')
+		else if (eventType == 'pointerMove' && this.targetEnabled)
 		{
-		    // offset the target aim position by 45 pixels so that the pointer cursor is in the center of the crosshair
+		    // offset the target aim position by 45 pixels so that the pointer cursor is in the center of the crosshair (canvas resizing not taken into account)
 		    this.target.x = position.x - 45;
 		    this.target.y = position.y - 45;
 		}
@@ -300,11 +312,14 @@ var moorhuhn = SAGE2_App.extend({
 	    this.backgroundImage.src    = '/uploads/assets/moorhuhn/background/playground-moorhuhn.png';
 	    this.backgroundImage.onload = this.handleBackgroundImageLoad(this, 1280, 720, false);
 
-	    this.targetImage            = new Image();
-	    this.targetImage.src        = '/uploads/assets/moorhuhn/target.svg';
-	    this.targetImage.onload     = this.handleTargetImageLoad(this);
+	    if (this.targetEnabled)
+	    {
+		    this.targetImage            = new Image();
+		    this.targetImage.src        = '/uploads/assets/moorhuhn/target.svg';
+		    this.targetImage.onload     = this.handleTargetImageLoad(this);
+		}
 
-	    // load animations
+	    // load the first bird after a while
 	    setTimeout(function() {
 		    self.moorhuhn.animation = self.createAnimation(getFlyRightSpriteConfig(), -200, self.areaHeight / 2, self.moorhuhnScale, self.moorhuhnScale, 'flapRight');
 		    self.moorhuhn.direction = 'right';
@@ -353,11 +368,10 @@ var moorhuhn = SAGE2_App.extend({
 
 	// a callback function to rasterize, transparate, cache and append the background image 
 	handleBackgroundImageLoad: function (instance, width, height, cache) {
-		// return;
 	    instance.background = new createjs.Bitmap(instance.backgroundImage);
 	    
-	    var scaleX = (instance.areaWidth / width);
-	    var scaleY = (instance.areaHeight / height);
+	    var scaleX                 = (instance.areaWidth / width);
+	    var scaleY                 = (instance.areaHeight / height);
 	    instance.background.scaleX = scaleX;
 	    instance.background.scaleY = scaleY;
 	    // lower the alpha so that the bird can be seen against the trees
@@ -376,11 +390,14 @@ var moorhuhn = SAGE2_App.extend({
 	    instance.target        = new createjs.Bitmap(instance.targetImage);
 	    instance.target.x      = instance.areaWidth / 2;
 	    instance.target.y      = instance.areaHeight / 2;
-	    instance.target.scaleX = 0.15;
-	    instance.target.scaleY = 0.15;
+
+	    // var scaleX             = (instance.areaWidth / 5500);
+	    // var scaleY             = (instance.areaHeight / 4000);
+	    // instance.target.scaleX = scaleX;
+	    // instance.target.scaleY = scaleY;
 
 	    // Set the second parameter (z-coord) as high as possible, so that the target aim is always in front of everything
-	    instance.stage.addChildAt(instance.target, 5);
+	    instance.stage.addChild(instance.target);
 
 		console.log('Target aim succesfully appended');
 	},
