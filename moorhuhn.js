@@ -14,10 +14,12 @@ var moorhuhn = SAGE2_App.extend({
 		this.soundEnabled = null;
 
 		// construct graphics
+		this.fill            = null;
 		this.backgroundImage = null;
 		this.background      = null;
 		this.targetImage     = null;
 		this.target          = null;
+		this.gameOverHaze    = null;
 
 		// construct the bird
 		this.moorhuhnXPos  = null;
@@ -27,7 +29,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.moorhuhn      = {};
 
 		// construct the timer
-		this.timerText     = null;
+		this.timerText = null;
 		this.gameTime  = null;
 		this.gameTimer = null;
 
@@ -62,11 +64,15 @@ var moorhuhn = SAGE2_App.extend({
 		this.context               = this.element.getContext('2d');
 	    this.context.canvas.width  = this.areaWidth;
 	    this.context.canvas.height = this.areaHeight;
-	    this.element.id            = 'birdCanvas';
-	    this.stage                 = new createjs.Stage('birdCanvas');
+	    this.stage                 = new createjs.Stage(this.element);
+
+	    // create the fill behind the background
+	    this.fill = new createjs.Shape();
+	    this.fill.graphics.beginFill("#B6B6B4").drawRect(0, 0, this.areaWidth, this.areaHeight);
+	    this.stage.addChildAt(this.fill, 0);
 
 	    // set this to true if the game should include all the sounds and music
-	    this.soundEnabled          = false;
+	    this.soundEnabled = false;
 
 	    // init the object queue
 	    this.queue = new createjs.LoadQueue(false);
@@ -100,14 +106,15 @@ var moorhuhn = SAGE2_App.extend({
 		this.maxSpawnScale  = 1.0;
 
 		// initial game time and timer updating function
-		this.gameTime = 100;
+		this.gameTime = 15;
 		var self      = this;
 		this.gameTimer = setInterval(function () {
 			self.gameTime -= 1;
+			if (self.timerText)
+				self.timerText.text = 'Time left: ' + self.gameTime.toString();
 			if(self.gameTime === 0)
 			{
 				// end game and clean up
-				self.timerText.text = 'GAME OVER';
 				self.stage.removeChild(self.moorhuhn.animation);
 				// nullify the moorhuhn so that the Ticker::tick event listeners can still go on without creating new chickens
 				self.moorhuhn.animation = null;
@@ -117,12 +124,10 @@ var moorhuhn = SAGE2_App.extend({
 		        	createjs.Sound.removeSound('background');
 		        	createjs.Sound.play('gameOverSound');
 		        }
+		        self.gameOverHaze = new createjs.Shape();
+			    self.gameOverHaze.graphics.beginFill("#000000").drawRect(0, 0, self.areaWidth, self.areaHeight);
+			    self.stage.addChild(self.gameOverHaze).set({alpha: 0.6});
 				clearInterval(self.gameTimer);
-			}
-			else
-			{
-				if (self.timerText)
-					self.timerText.text = 'Time left: ' + self.gameTime.toString();
 			}
 		}, 1000);
 
@@ -181,6 +186,8 @@ var moorhuhn = SAGE2_App.extend({
 	resize: function(date) {
 		this.areaWidth  = this.context.canvas.width;
 		this.areaHeight = this.context.canvas.height;
+
+	    this.fill.graphics.beginFill("#B6B6B4").drawRect(0, 0, this.areaWidth, this.areaHeight);
 
 	    this.timerText.x = this.areaWidth / 2;
 
@@ -298,21 +305,23 @@ var moorhuhn = SAGE2_App.extend({
 	    this.targetImage.onload     = this.handleTargetImageLoad(this);
 
 	    // load animations
-	    this.moorhuhn.animation = this.createAnimation(getFlyRightSpriteConfig(), 0, 200, this.moorhuhnScale, this.moorhuhnScale, 'flapRight');
-	    this.moorhuhn.direction = 'right';
+	    setTimeout(function() {
+		    self.moorhuhn.animation = self.createAnimation(getFlyRightSpriteConfig(), -200, self.areaHeight / 2, self.moorhuhnScale, self.moorhuhnScale, 'flapRight');
+		    self.moorhuhn.direction = 'right';
+		}, 5000);
 
 	    // add timer
 	    this.timerText   = new createjs.Text('Time left: ' + this.gameTime.toString(), '36px Arial', '#FFF');
 	    this.timerText.x = this.areaWidth / 2;
 	    this.timerText.y = 10;
-	    this.stage.addChildAt(this.timerText, 1);
+	    this.stage.addChildAt(this.timerText, 2);
 		console.log('Timer succesfully appended');
 
 		// add scoreboard
 	    this.scoreboard   = new createjs.Text(this.fillScoreboard(), '36px Arial', '#FFF');
 	    this.scoreboard.x = 10;
 	    this.scoreboard.y = 10;
-	    this.stage.addChildAt(this.scoreboard, 2);
+	    this.stage.addChildAt(this.scoreboard, 3);
 		console.log('Scoreboard succesfully appended');
 
 	    // play background music
@@ -336,7 +345,7 @@ var moorhuhn = SAGE2_App.extend({
 	     * moorhuhn should always be in front of the background and behind the target aim
 	     * first case happens when the moorhuhn is firstly loaded, second when replaced for one that flies in the opposite direction
 	     */
-	    this.stage.addChildAt(animation, 3);
+	    this.stage.addChildAt(animation, 4);
 
 		console.log('A new moorhuhn animation succesfully appended');
 	    return animation;
@@ -344,19 +353,20 @@ var moorhuhn = SAGE2_App.extend({
 
 	// a callback function to rasterize, transparate, cache and append the background image 
 	handleBackgroundImageLoad: function (instance, width, height, cache) {
+		// return;
 	    instance.background = new createjs.Bitmap(instance.backgroundImage);
 	    
 	    var scaleX = (instance.areaWidth / width);
 	    var scaleY = (instance.areaHeight / height);
 	    instance.background.scaleX = scaleX;
 	    instance.background.scaleY = scaleY;
-	    console.log(scaleX);
-	    // instance.background.set({alpha: 0.85});
+	    // lower the alpha so that the bird can be seen against the trees
+	    instance.background.set({alpha: 0.85});
 	    // cache the background, so that it's not re-rendered every tick
 	    if (cache)
 	    	instance.background.cache(0, 0, 1280 * (1 + scaleX), 720 * (1 + scaleY));
 
-	    instance.stage.addChildAt(instance.background, 0);
+	    instance.stage.addChildAt(instance.background, 1);
 
 		console.log('Background succesfully appended');
 	},
@@ -370,7 +380,7 @@ var moorhuhn = SAGE2_App.extend({
 	    instance.target.scaleY = 0.15;
 
 	    // Set the second parameter (z-coord) as high as possible, so that the target aim is always in front of everything
-	    instance.stage.addChildAt(instance.target, instance.stage.getNumChildren());
+	    instance.stage.addChildAt(instance.target, 5);
 
 		console.log('Target aim succesfully appended');
 	},
