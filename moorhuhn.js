@@ -20,7 +20,9 @@ var moorhuhn = SAGE2_App.extend({
 	construct: function() {
 		// call super-class 'construct' and set the window resize type
 		arguments.callee.superClass.construct.call(this);
-		this.resizeEvents = 'onfinish';
+		// onfinish resize for some reason doesn't work until the second resize attempt
+		// this.resizeEvents = 'onfinish';
+		this.resizeEvents = 'continuous';
 		
 		// construct stage
 		this.areaWidth    = null;
@@ -139,10 +141,6 @@ var moorhuhn = SAGE2_App.extend({
 		// limit the SAGE2 fps
 		this.maxFPS = 10.0;
 
-		// set ticker fps and tell to stage to listen for tick event, so that it can redraw itself
-	    // createjs.Ticker.setFPS(this.maxFPS);
-	    // createjs.Ticker.addEventListener('tick', this.stage);
-
 	    // add a button for user to restart the game
 	    var newGame  =  {'textual': true, 'label': 'New', 'fill': 'rgba(250, 250, 250, 1.0)', 'animation': false};
 		this.controls.addButton({type: newGame, sequenceNo: 1, action: function(date) {
@@ -260,6 +258,8 @@ var moorhuhn = SAGE2_App.extend({
 			        {
 			            var self = this;
 
+			            this.changeScore(userId.id, this.shotHit);
+
 			            // the chicken has been hit hard
 			            this.stage.removeChild(this.moorhuhn.animation);
 			            this.moorhuhn.animation = null;
@@ -270,8 +270,6 @@ var moorhuhn = SAGE2_App.extend({
 
 			            if (this.soundEnabled)
 			            	createjs.Sound.play('deathSound');
-
-			            this.changeScore(userId.id, this.shotHit);
 
 			            // create a new chicken using random variables
 			            var timeToCreate   = this.getRandomInt(this.minSpawnTime, this.maxSpawnTime, date);
