@@ -439,7 +439,7 @@ var moorhuhn = SAGE2_App.extend({
 		    instance.stage.addChild(instance.gameOverHaze).set({alpha: 0.6});
 
 		    // add the game over text
-		    instance.gameOverText   = new createjs.Text('GAME OVER', instance.fontStyle, '#FFF');
+		    instance.gameOverText   = new createjs.Text("GAME OVER\n\n" + instance.getWinner(), instance.fontStyle, '#FFF');
 		    instance.gameOverText.x = instance.areaWidth / 2;
 		    instance.gameOverText.y = instance.areaHeight / 2;
 		    instance.gameOverText.textAlign = 'center';
@@ -486,6 +486,24 @@ var moorhuhn = SAGE2_App.extend({
 		}
 
 		return s;
+	},
+
+	// winner
+	getWinner: function () {
+		var s      = 'The winner is: ';
+		var winner = 'nobody';
+		var best   = -Infinity;
+
+		for (var i = 0; i < this.players.length; i++)
+		{
+			if (this.players[i].score > best)
+			{
+				best   = this.players[i].score;
+				winner = this.players[i].name;
+			}
+		}
+
+		return 'The winner is: ' + winner + ' with ' + best.toString() + ' points';
 	},
 
 	// a set of helper functions that generate pseudo random numbers
