@@ -54,6 +54,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.gameTimer       = null;
 		this.gameOverText    = null;
 		this.gameOverHaze    = null;
+		this.useEventDate    = null;
 
 		// construct the player-related variables
 		this.players    = [];
@@ -94,9 +95,10 @@ var moorhuhn = SAGE2_App.extend({
 	    this.fill.graphics.beginFill('#B6B6B4').drawRect(0, 0, this.areaWidth, this.areaHeight);
 	    this.stage.addChildAt(this.fill, 0);
 
-	    // set these two to true if the game should include all the sounds and music or a target
+	    // enable sound, target or use event date in random number generating functions
 	    this.soundEnabled  = false;
 	    this.targetEnabled = false;
+	    this.useEventDate  = true;
 
 		// default style of all the in-game strings
 	    var fontSize   = this.areaWidth / 35;
@@ -134,7 +136,7 @@ var moorhuhn = SAGE2_App.extend({
 		this.maxSpawnScale  = 1.0;
 
 		// initial game time and timer updating function
-		this.initialGameTime = this.gameTime = 30;
+		this.initialGameTime = this.gameTime = 60;
 		var self       = this;
 		this.gameTimer = setInterval(this.countdown, 1000, this);
 
@@ -505,18 +507,19 @@ var moorhuhn = SAGE2_App.extend({
 	},
 
 	// a set of helper functions that generate pseudo random numbers
+	// according to the object variable, the generated number is either related to the supplied date or comes from a global array and is based on game time
 	getRandomBinary: function (date) {
-		var pseudoRandom = moment(date).unix() / 10 % 1;
+		var pseudoRandom = this.useEventDate ? (moment(date).unix() / 10 % 1) : randomNumbers[this.gameTime % randomNumbers.length];
 	    return Math.round(pseudoRandom);
 	},
 
 	getRandom1decimal: function (min, max, date) {
-		var pseudoRandom = moment(date).unix() / 10 % 1;
+		var pseudoRandom = this.useEventDate ? (moment(date).unix() / 10 % 1) : randomNumbers[this.gameTime % randomNumbers.length];
 	    return Math.round((pseudoRandom * (max - min) + min) * 10) / 10;
 	},
 
 	getRandomInt: function (min, max, date) {
-		var pseudoRandom = moment(date).unix() / 10 % 1;
+		var pseudoRandom = this.useEventDate ? (moment(date).unix() / 10 % 1) : randomNumbers[this.gameTime % randomNumbers.length];
 	    return Math.floor(pseudoRandom * (max - min + 1)) + min;
 	}
 });
